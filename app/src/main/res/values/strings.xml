@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Song Recommander</string>
+    <string name="facebook_app_id">134799111289195</string>
+    <string name="fb_login_protocol_scheme">fb134799111289195</string>
+    <string name="email">Email</string>
+    <string name="enter_password">Enter Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="sign_in">Sign In</string>
+    <string name="image_info">Image Info</string>
+    <string name="button">Back</string>
+</resources>

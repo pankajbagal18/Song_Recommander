@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1037799504005",
+    "firebase_url": "https://song-recommander.firebaseio.com",
+    "project_id": "song-recommander",
+    "storage_bucket": "song-recommander.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1037799504005:android:419841f7e0e0079c6a91ec",
+        "android_client_info": {
+          "package_name": "com.example.songrecommander"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1037799504005-lhc18mmbhihdt394lq40p8j0p3cjuh2a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApk79fo6rIWpX9djNkH53pXxLNReoBtSY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1037799504005-lhc18mmbhihdt394lq40p8j0p3cjuh2a.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
