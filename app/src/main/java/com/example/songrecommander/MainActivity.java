@@ -60,6 +60,14 @@ public class MainActivity extends AppCompatActivity {
         photoButton = (Button)findViewById(R.id.photoButton);
         fbAnalysisButton = (Button)findViewById(R.id.fbAnalysisButton);
 
+
+        fbAnalysisButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(getApplicationContext(),FBAnalysis.class));
+            }
+        });
+
         logout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
