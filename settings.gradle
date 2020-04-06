@@ -1,2 +1,3 @@
 rootProject.name='Song Recommander'
 include ':app'
+include ':java'
