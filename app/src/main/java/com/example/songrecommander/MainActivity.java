@@ -59,7 +59,13 @@ public class MainActivity extends AppCompatActivity {
 
         photoButton = (Button)findViewById(R.id.photoButton);
         fbAnalysisButton = (Button)findViewById(R.id.fbAnalysisButton);
-
+        Button cvCameraButton = (Button)findViewById(R.id.cvCamera);
+        cvCameraButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(getApplicationContext(),OpenCVCamera.class));
+            }
+        });
         logout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -106,15 +112,16 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Toast.makeText(getApplicationContext(),"Picture Taken",Toast.LENGTH_LONG).show();
+        //super.onActivityResult(requestCode, resultCode, data);
+        Toast.makeText(getApplicationContext(), "Picture Taken", Toast.LENGTH_LONG).show();
         FirebaseStorage storage = FirebaseStorage.getInstance("gs://song-recommander.appspot.com");
         StorageReference storageReference = storage.getReference();
-        StorageReference imagesRef = storageReference.child(mAuth.getUid()+"/"+photoURI.getLastPathSegment());
+        StorageReference imagesRef = storageReference.child(mAuth.getUid() + "/" + photoURI.getLastPathSegment());
         UploadTask uploadTask = imagesRef.putFile(photoURI);
         uploadTask.addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Toast.makeText(getApplicationContext(),"Failed",Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), "Failed", Toast.LENGTH_LONG).show();
             }
         }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
@@ -122,9 +129,9 @@ public class MainActivity extends AppCompatActivity {
                 //Toast.makeText(getApplicationContext(),"Uploaded",Toast.LENGTH_LONG).show();
             }
         });
-        Intent photoAnalysisIntent = new Intent(getApplicationContext(),PhotoAnalysis.class);
+        Intent photoAnalysisIntent = new Intent(getApplicationContext(), PhotoAnalysis.class);
         String photoPath = photoURI.getPath();
-        photoAnalysisIntent.putExtra("PHOTO_PATH",currentPhotoPath);
+        photoAnalysisIntent.putExtra("PHOTO_PATH", currentPhotoPath);
         startActivity(photoAnalysisIntent);
         finish();
     }
