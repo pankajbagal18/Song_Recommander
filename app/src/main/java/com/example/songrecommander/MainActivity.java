@@ -68,13 +68,6 @@ public class MainActivity extends AppCompatActivity {
 
         photoButton = (Button)findViewById(R.id.photoButton);
         fbAnalysisButton = (Button)findViewById(R.id.fbAnalysisButton);
-        Button cvCameraButton = (Button)findViewById(R.id.cvCamera);
-        cvCameraButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startActivity(new Intent(getApplicationContext(),OpenCVCamera.class));
-            }
-        });
         logout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
