@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.FaceDetector;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -14,13 +15,16 @@ import android.widget.Toast;
 
 public class PhotoAnalysis extends AppCompatActivity {
 
-    private ImageView image;
-    private Button backButton;
+    private FaceOverlay mFaceOverlayView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_photo_analysis);
-        image = (ImageView) findViewById(R.id.currentPhoto);
+        mFaceOverlayView = (FaceOverlay)findViewById(R.id.face_overlay);
+        String photoPath = getIntent().getStringExtra("PHOTO_PATH");
+        mFaceOverlayView.setBitmap(BitmapFactory.decodeFile(photoPath));
+
+        /*image = (ImageView) findViewById(R.id.currentPhoto);
         String photoPath = getIntent().getStringExtra("PHOTO_PATH");
         if(photoPath==null)
             Toast.makeText(getApplicationContext(),"null image",Toast.LENGTH_LONG).show();
@@ -43,6 +47,6 @@ public class PhotoAnalysis extends AppCompatActivity {
             public void onClick(View v) {
                 startActivity(new Intent(getApplicationContext(),MainActivity.class));
             }
-        });
+        });*/
     }
 }
