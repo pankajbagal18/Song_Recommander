@@ -78,6 +78,7 @@ public class FaceOverlay extends View {
         for(int i=0;i<mFaces.size();i++)
         {
             Face face = mFaces.valueAt(i);
+
             left = (float)(face.getPosition().x);
             top = (float)(face.getPosition().y);
             right = (float)(face.getPosition().x+face.getWidth());
