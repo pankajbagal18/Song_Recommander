@@ -151,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             faceBitmap.compress(Bitmap.CompressFormat.JPEG,100,byteArrayOutputStream);
             byte[] data = byteArrayOutputStream.toByteArray();
-            StorageReference imagesRef = storageReference.child(mAuth.getUid() + timeStamp+"/faces/face"+(i+1)+".JPEG" );
+            StorageReference imagesRef = storageReference.child(mAuth.getUid() + "/"+timeStamp+"/faces/face"+(i+1)+".JPEG" );
             UploadTask uploadTask = imagesRef.putBytes(data);
             uploadTask.addOnFailureListener(new OnFailureListener() {
                 @Override
@@ -195,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
         final int[] successCode = {0};
         FirebaseStorage storage = FirebaseStorage.getInstance("gs://song-recommander.appspot.com");
         StorageReference storageReference = storage.getReference();
-        StorageReference imagesRef = storageReference.child(mAuth.getUid() + timeStamp+"/image/" + photoURI.getLastPathSegment());
+        StorageReference imagesRef = storageReference.child(mAuth.getUid() + "/"+timeStamp+"/image/" + photoURI.getLastPathSegment());
         UploadTask uploadTask = imagesRef.putFile(photoURI);
         uploadTask.addOnFailureListener(new OnFailureListener() {
             @Override
