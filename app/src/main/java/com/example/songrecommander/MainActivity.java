@@ -48,6 +48,8 @@ public class MainActivity extends AppCompatActivity {
     Uri photoURI;
     String imageFileName;
     String timeStamp;
+    String faceRef;
+    String photoRef;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -115,73 +117,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
             Toast.makeText(getApplicationContext(), "Picture Taken", Toast.LENGTH_LONG).show();
-            String photoPath = photoURI.getPath();
             Bitmap bitmap = BitmapFactory.decodeFile(currentPhotoPath);
-            SparseArray<Face> detectedFaces = detectFaces(bitmap);
             int status = uploadImageToFirebase();
-            uploadFacesToFirebase(bitmap, detectedFaces);
             Intent photoAnalysisIntent = new Intent(getApplicationContext(), PhotoAnalysis.class);
-            photoAnalysisIntent.putExtra("PHOTO_PATH", currentPhotoPath);
+            photoAnalysisIntent.putExtra("PHOTO_PATH",currentPhotoPath);
             startActivity(photoAnalysisIntent);
             finish();
 
     }
 
-    private void uploadFacesToFirebase(Bitmap bitmap, SparseArray<Face> detectedFaces) {
-
-        FirebaseStorage storage = FirebaseStorage.getInstance("gs://song-recommander.appspot.com");
-        StorageReference storageReference = storage.getReference();
-        for(int i=0;i<detectedFaces.size();i++)
-        {
-
-            Face detectedFace = detectedFaces.valueAt(i);
-            Bitmap faceBitmap = Bitmap.createBitmap(bitmap,
-                    (int)detectedFace.getPosition().x,
-                    (int)detectedFace.getPosition().y,
-                    (int)detectedFace.getWidth(),
-                    (int)detectedFace.getHeight()
-                    );
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            faceBitmap.compress(Bitmap.CompressFormat.JPEG,100,byteArrayOutputStream);
-            byte[] data = byteArrayOutputStream.toByteArray();
-            StorageReference imagesRef = storageReference.child(mAuth.getUid() + "/"+timeStamp+"/faces/face"+(i+1)+".JPEG" );
-            UploadTask uploadTask = imagesRef.putBytes(data);
-            uploadTask.addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception e) {
-                    Toast.makeText(getApplicationContext(), "Failed", Toast.LENGTH_LONG).show();
-                }
-            }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                @Override
-                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                    //Toast.makeText(getApplicationContext(),"Uploaded",Toast.LENGTH_LONG).show();
-
-                }
-            });
-        }
-    }
-
-
-    private SparseArray<Face> detectFaces(Bitmap bitmap)
-    {
-        SparseArray<Face> faces=null;
-        FaceDetector faceDetector = new FaceDetector.Builder(this)
-                .setTrackingEnabled(true)
-                .setLandmarkType(FaceDetector.ALL_LANDMARKS)
-                .setMode(FaceDetector.ACCURATE_MODE)
-                .build();
-        if(!faceDetector.isOperational())
-        {
-            Toast.makeText(this,"FaceDetector is not working",Toast.LENGTH_SHORT).show();
-        }
-        else
-        {
-            Frame frame = new Frame.Builder().setBitmap(bitmap).build();
-            faces = faceDetector.detect(frame);
-            faceDetector.release();
-        }
-        return faces;
-    }
 
     private int uploadImageToFirebase()
     {
