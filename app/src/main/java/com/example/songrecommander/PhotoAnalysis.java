@@ -46,7 +46,6 @@ public class PhotoAnalysis extends AppCompatActivity {
         Bitmap currentPhotoBitmap = BitmapFactory.decodeFile(getIntent().getStringExtra("PHOTO_PATH"));
         parentImage.setImageBitmap(currentPhotoBitmap);
         SparseArray<Face> detectedFaces = detectFaces(currentPhotoBitmap);
-
     }
 
 

@@ -116,13 +116,14 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-            Toast.makeText(getApplicationContext(), "Picture Taken", Toast.LENGTH_LONG).show();
-            Bitmap bitmap = BitmapFactory.decodeFile(currentPhotoPath);
-            int status = uploadImageToFirebase();
-            Intent photoAnalysisIntent = new Intent(getApplicationContext(), PhotoAnalysis.class);
-            photoAnalysisIntent.putExtra("PHOTO_PATH",currentPhotoPath);
-            startActivity(photoAnalysisIntent);
-            finish();
+        super.onActivityResult(requestCode, resultCode, data);
+        Toast.makeText(getApplicationContext(), "Picture Taken", Toast.LENGTH_LONG).show();
+        Bitmap bitmap = BitmapFactory.decodeFile(currentPhotoPath);
+        int status = uploadImageToFirebase();
+        Intent photoAnalysisIntent = new Intent(getApplicationContext(), PhotoAnalysis.class);
+        photoAnalysisIntent.putExtra("PHOTO_PATH",currentPhotoPath);
+        startActivity(photoAnalysisIntent);
+        finish();
 
     }
 
