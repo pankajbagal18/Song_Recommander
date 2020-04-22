@@ -42,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private Button logout;
     private Button photoButton;
     private Button fbAnalysisButton;
+    private SquareImageView faceImageView;
     static final int REQUEST_IMAGE_CAPTURE = 1;
     static final int REQUEST_TAKE_PHOTO = 1;
     String currentPhotoPath;
@@ -57,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
         logout = (Button)findViewById(R.id.logout);
         mAuth = FirebaseAuth.getInstance();
         welcomeMSG = (TextView)findViewById(R.id.welcomeMSG);
+        faceImageView = (SquareImageView)findViewById(R.id.faceImageView);
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if(currentUser==null)
         {
@@ -118,13 +120,16 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         Toast.makeText(getApplicationContext(), "Picture Taken", Toast.LENGTH_LONG).show();
-        Bitmap bitmap = BitmapFactory.decodeFile(currentPhotoPath);
-        int status = uploadImageToFirebase();
-        Intent photoAnalysisIntent = new Intent(getApplicationContext(), PhotoAnalysis.class);
-        photoAnalysisIntent.putExtra("PHOTO_PATH",currentPhotoPath);
-        startActivity(photoAnalysisIntent);
-        finish();
-
+        Bitmap imageBitmap = BitmapFactory.decodeFile(currentPhotoPath);
+        SparseArray<Face> detectedFaces = detectFaces(imageBitmap);
+        Face detectedFace = detectedFaces.valueAt(0);
+        Bitmap faceBitmap = Bitmap.createBitmap(imageBitmap,
+                (int)detectedFace.getPosition().x,
+                (int)detectedFace.getPosition().y,
+                (int)detectedFace.getWidth(),
+                (int)detectedFace.getHeight()
+        );
+        faceImageView.setImageBitmap(faceBitmap);
     }
 
 
@@ -163,5 +168,24 @@ public class MainActivity extends AppCompatActivity {
         currentPhotoPath = image.getAbsolutePath();
         return image;
     }
-
+    private SparseArray<Face> detectFaces(Bitmap bitmap)
+    {
+        SparseArray<Face> faces=null;
+        com.google.android.gms.vision.face.FaceDetector faceDetector = new com.google.android.gms.vision.face.FaceDetector.Builder(this)
+                .setTrackingEnabled(true)
+                .setLandmarkType(com.google.android.gms.vision.face.FaceDetector.ALL_LANDMARKS)
+                .setMode(FaceDetector.ACCURATE_MODE)
+                .build();
+        if(!faceDetector.isOperational())
+        {
+            Toast.makeText(this,"FaceDetector is not working",Toast.LENGTH_SHORT).show();
+        }
+        else
+        {
+            Frame frame = new Frame.Builder().setBitmap(bitmap).build();
+            faces = faceDetector.detect(frame);
+            faceDetector.release();
+        }
+        return faces;
+    }
 }
