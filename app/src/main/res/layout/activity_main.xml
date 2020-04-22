@@ -22,7 +22,7 @@
         android:text="Take Photo"
         />
     <TextView
-        android:id="@+id/emotionView"
+        android:id="@+id/emotionTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Emotion ?"
@@ -35,8 +35,18 @@
     android:layout_height="match_parent"
     android:src="@drawable/ic_launcher_background"/>
 
-
-
+    <Button
+        android:id="@+id/detectButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Detect"
+        />
+    <Button
+        android:id="@+id/clearButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Clear"
+        />
     <Button
         android:id="@+id/fbAnalysisButton"
         android:layout_width="match_parent"
