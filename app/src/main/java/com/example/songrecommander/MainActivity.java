@@ -3,7 +3,9 @@ package com.example.songrecommander;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
+import androidx.swiperefreshlayout.widget.CircularProgressDrawable;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -13,6 +15,7 @@ import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -20,6 +23,7 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -56,9 +60,9 @@ public class MainActivity extends AppCompatActivity {
     private Button fbAnalysisButton;
     private SquareImageView faceImageView;
     TensorFlowClassifier classifier;
+    ProgressDialog showProgress;
     static final int REQUEST_IMAGE_CAPTURE = 1;
     static final int REQUEST_TAKE_PHOTO = 1;
-
     String currentPhotoPath;
     Uri photoURI;
     String imageFileName;
@@ -105,7 +109,8 @@ public class MainActivity extends AppCompatActivity {
         detectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                detectFaces();
+                AsyncDetectFace asyncDetectFace = new AsyncDetectFace();
+                asyncDetectFace.execute(imageBitmap);
                 detectEmotion();
             }
         });
@@ -116,6 +121,63 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         loadModel();
+    }
+
+    private class AsyncDetectFace extends AsyncTask<Bitmap,String,Bitmap>
+    {
+
+        @Override
+        protected void onPreExecute()
+        {
+            super.onPreExecute();
+            showProgress = new ProgressDialog(MainActivity.this);
+            showProgress.setTitle("Wait!!");
+            showProgress.setMessage("FaceDetection is in progress!!");
+            showProgress.setCancelable(true);
+            showProgress.setIndeterminate(true);
+            showProgress.show();
+        }
+
+        @Override
+        protected Bitmap doInBackground(Bitmap... bitmaps) {
+            SparseArray<Face> faces=null;
+            com.google.android.gms.vision.face.FaceDetector faceDetector = new com.google.android.gms.vision.face.FaceDetector.Builder(MainActivity.this)
+                    .setTrackingEnabled(true)
+                    .setLandmarkType(com.google.android.gms.vision.face.FaceDetector.ALL_LANDMARKS)
+                    .setMode(FaceDetector.ACCURATE_MODE)
+                    .build();
+            if(!faceDetector.isOperational())
+            {
+                Toast.makeText(MainActivity.this,"FaceDetector is not working",Toast.LENGTH_SHORT).show();
+            }
+            else
+            {
+                Frame frame = new Frame.Builder().setBitmap(imageBitmap).build();
+                faces = faceDetector.detect(frame);
+                faceDetector.release();
+            }
+            if(faces == null)
+            {
+                Toast.makeText(MainActivity.this,"No face found",Toast.LENGTH_SHORT).show();
+                return null;
+            }
+            Face detectedFace = faces.valueAt(0);
+            Bitmap faceBitmap = Bitmap.createBitmap(imageBitmap,
+                    (int)detectedFace.getPosition().x,
+                    (int)detectedFace.getPosition().y,
+                    (int)detectedFace.getWidth(),
+                    (int)detectedFace.getHeight()
+            );
+            return faceBitmap;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap)
+        {
+            super.onPostExecute(bitmap);
+            faceImageView.setImageBitmap(bitmap);
+            showProgress.hide();
+        }
     }
 
     private void takePhoto() {
