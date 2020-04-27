@@ -3,7 +3,6 @@ package com.example.songrecommander;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
-import androidx.swiperefreshlayout.widget.CircularProgressDrawable;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -23,7 +22,6 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,10 +37,6 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-
-import org.w3c.dom.Text;
-
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -61,7 +55,6 @@ public class MainActivity extends AppCompatActivity {
     private SquareImageView faceImageView;
     TensorFlowClassifier classifier;
     ProgressDialog showProgress;
-    static final int REQUEST_IMAGE_CAPTURE = 1;
     static final int REQUEST_TAKE_PHOTO = 1;
     String currentPhotoPath;
     Uri photoURI;
@@ -72,26 +65,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        logout = (Button)findViewById(R.id.logout);
-        mAuth = FirebaseAuth.getInstance();
-        welcomeMSG = (TextView)findViewById(R.id.welcomeMSG);
-        faceImageView = (SquareImageView)findViewById(R.id.faceImageView);
-        detectButton = (Button)findViewById(R.id.detectButton);
-        clearButton = (Button)findViewById(R.id.clearButton);
-        emotionTextView = (TextView)findViewById(R.id.emotionTextView);
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if(currentUser==null)
-        {
-            startActivity(new Intent(getApplicationContext(),SignInActivity.class));
-            this.finish();
-        }
-        else
-        {
-            welcomeMSG.setText("Welcome "+currentUser.getEmail()+" to our app.");
-        }
-
-        photoButton = (Button)findViewById(R.id.photoButton);
-        fbAnalysisButton = (Button)findViewById(R.id.fbAnalysisButton);
+        initializeViews();
+        checkAuthentication();
         logout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -109,9 +84,7 @@ public class MainActivity extends AppCompatActivity {
         detectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                AsyncDetectFace asyncDetectFace = new AsyncDetectFace();
-                asyncDetectFace.execute(imageBitmap);
-                detectEmotion();
+                new AsyncFaceDetectionNEmotionRecognizition().execute(imageBitmap);
             }
         });
         clearButton.setOnClickListener(new View.OnClickListener() {
@@ -123,7 +96,34 @@ public class MainActivity extends AppCompatActivity {
         loadModel();
     }
 
-    private class AsyncDetectFace extends AsyncTask<Bitmap,String,Bitmap>
+    private void initializeViews()
+    {
+        logout = (Button)findViewById(R.id.logout);
+        mAuth = FirebaseAuth.getInstance();
+        welcomeMSG = (TextView)findViewById(R.id.welcomeMSG);
+        faceImageView = (SquareImageView)findViewById(R.id.faceImageView);
+        detectButton = (Button)findViewById(R.id.detectButton);
+        detectButton.setEnabled(false);
+        clearButton = (Button)findViewById(R.id.clearButton);
+        emotionTextView = (TextView)findViewById(R.id.emotionTextView);
+        photoButton = (Button)findViewById(R.id.photoButton);
+        fbAnalysisButton = (Button)findViewById(R.id.fbAnalysisButton);
+    }
+
+    private void checkAuthentication()
+    {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if(currentUser==null)
+        {
+            startActivity(new Intent(getApplicationContext(),SignInActivity.class));
+            this.finish();
+        }
+        else
+        {
+            welcomeMSG.setText("Welcome "+currentUser.getEmail()+" to our app.");
+        }
+    }
+    private class AsyncFaceDetectionNEmotionRecognizition extends AsyncTask<Bitmap,String,Bitmap>
     {
 
         @Override
@@ -162,13 +162,12 @@ public class MainActivity extends AppCompatActivity {
                 return null;
             }
             Face detectedFace = faces.valueAt(0);
-            Bitmap faceBitmap = Bitmap.createBitmap(imageBitmap,
+            return Bitmap.createBitmap(imageBitmap,
                     (int)detectedFace.getPosition().x,
                     (int)detectedFace.getPosition().y,
                     (int)detectedFace.getWidth(),
                     (int)detectedFace.getHeight()
             );
-            return faceBitmap;
         }
 
         @Override
@@ -176,6 +175,51 @@ public class MainActivity extends AppCompatActivity {
         {
             super.onPostExecute(bitmap);
             faceImageView.setImageBitmap(bitmap);
+            Bitmap image=((BitmapDrawable)faceImageView.getDrawable()).getBitmap();
+            Bitmap grayImage = toGrayscale(image);
+            Bitmap resizedImage = getResizedBitmap(grayImage,48,48);
+            int[] pixelarray;
+
+            //Initialize the intArray with the same size as the number of pixels on the image
+            pixelarray = new int[resizedImage.getWidth()*resizedImage.getHeight()];
+
+            //copy pixel data from the Bitmap into the 'intArray' array
+            resizedImage.getPixels(pixelarray, 0, resizedImage.getWidth(), 0, 0, resizedImage.getWidth(), resizedImage.getHeight());
+
+
+            float[] normalized_pixels  = new float[pixelarray.length];
+            for (int i=0; i < pixelarray.length; i++) {
+                // 0 for white and 255 for black
+                int pix = pixelarray[i];
+                int b = pix & 0xff;
+                //  normalized_pixels[i] = (float)((0xff - b)/255.0);
+                // normalized_pixels[i] = (float)(b/255.0);
+                normalized_pixels[i] = (float)(b);
+
+            }
+            //System.out.println(normalized_pixels);
+            //Log.d("pixel_values",String.valueOf(normalized_pixels));
+            String text=null;
+
+            try{
+                final Classification res = classifier.recognize(normalized_pixels);
+                //if it can't classify, output a question mark
+                if (res.getLabel() == null) {
+                    text = "Status: "+ ": ?\n";
+                } else {
+                    //else output its name
+                    text = String.format("%s: %s, %f\n", "Status: ", res.getLabel(),
+                            res.getConf());
+                }}
+
+            catch (Exception  e){
+                System.out.print("Exception:"+e.toString());
+
+            }
+
+            //this.faceImageView.setImageBitmap(grayImage);
+            emotionTextView.setText(text);
+            detectButton.setEnabled(false);
             showProgress.hide();
         }
     }
@@ -214,6 +258,7 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(getApplicationContext(), "Picture Taken", Toast.LENGTH_LONG).show();
         imageBitmap = BitmapFactory.decodeFile(currentPhotoPath);
         faceImageView.setImageBitmap(imageBitmap);
+        detectButton.setEnabled(true);
     }
 
 
