@@ -39,4 +39,5 @@ dependencies {
     implementation 'com.google.firebase:firebase-ml-model-interpreter:22.0.1'
     implementation 'com.google.android.gms:play-services-vision:20.0.0'
     implementation 'org.tensorflow:tensorflow-android:+'
+    implementation 'com.google.firebase:firebase-database:19.3.0'
 }

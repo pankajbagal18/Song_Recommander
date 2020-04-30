@@ -1,6 +1,7 @@
 package com.example.songrecommander;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 
@@ -34,12 +35,19 @@ import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
@@ -121,106 +129,6 @@ public class MainActivity extends AppCompatActivity {
         else
         {
             welcomeMSG.setText("Welcome "+currentUser.getEmail()+" to our app.");
-        }
-    }
-    private class AsyncFaceDetectionNEmotionRecognizition extends AsyncTask<Bitmap,String,Bitmap>
-    {
-
-        @Override
-        protected void onPreExecute()
-        {
-            super.onPreExecute();
-            showProgress = new ProgressDialog(MainActivity.this);
-            showProgress.setTitle("Wait!!");
-            showProgress.setMessage("FaceDetection is in progress!!");
-            showProgress.setCancelable(true);
-            showProgress.setIndeterminate(true);
-            showProgress.show();
-        }
-
-        @Override
-        protected Bitmap doInBackground(Bitmap... bitmaps) {
-            SparseArray<Face> faces=null;
-            com.google.android.gms.vision.face.FaceDetector faceDetector = new com.google.android.gms.vision.face.FaceDetector.Builder(MainActivity.this)
-                    .setTrackingEnabled(true)
-                    .setLandmarkType(com.google.android.gms.vision.face.FaceDetector.ALL_LANDMARKS)
-                    .setMode(FaceDetector.ACCURATE_MODE)
-                    .build();
-            if(!faceDetector.isOperational())
-            {
-                Toast.makeText(MainActivity.this,"FaceDetector is not working",Toast.LENGTH_SHORT).show();
-            }
-            else
-            {
-                Frame frame = new Frame.Builder().setBitmap(imageBitmap).build();
-                faces = faceDetector.detect(frame);
-                faceDetector.release();
-            }
-            if(faces == null)
-            {
-                Toast.makeText(MainActivity.this,"No face found",Toast.LENGTH_SHORT).show();
-                return null;
-            }
-            Face detectedFace = faces.valueAt(0);
-            return Bitmap.createBitmap(imageBitmap,
-                    (int)detectedFace.getPosition().x,
-                    (int)detectedFace.getPosition().y,
-                    (int)detectedFace.getWidth(),
-                    (int)detectedFace.getHeight()
-            );
-        }
-
-        @Override
-        protected void onPostExecute(Bitmap bitmap)
-        {
-            super.onPostExecute(bitmap);
-            faceImageView.setImageBitmap(bitmap);
-            Bitmap image=((BitmapDrawable)faceImageView.getDrawable()).getBitmap();
-            Bitmap grayImage = toGrayscale(image);
-            Bitmap resizedImage = getResizedBitmap(grayImage,48,48);
-            int[] pixelarray;
-
-            //Initialize the intArray with the same size as the number of pixels on the image
-            pixelarray = new int[resizedImage.getWidth()*resizedImage.getHeight()];
-
-            //copy pixel data from the Bitmap into the 'intArray' array
-            resizedImage.getPixels(pixelarray, 0, resizedImage.getWidth(), 0, 0, resizedImage.getWidth(), resizedImage.getHeight());
-
-
-            float[] normalized_pixels  = new float[pixelarray.length];
-            for (int i=0; i < pixelarray.length; i++) {
-                // 0 for white and 255 for black
-                int pix = pixelarray[i];
-                int b = pix & 0xff;
-                //  normalized_pixels[i] = (float)((0xff - b)/255.0);
-                // normalized_pixels[i] = (float)(b/255.0);
-                normalized_pixels[i] = (float)(b);
-
-            }
-            //System.out.println(normalized_pixels);
-            //Log.d("pixel_values",String.valueOf(normalized_pixels));
-            String text=null;
-
-            try{
-                final Classification res = classifier.recognize(normalized_pixels);
-                //if it can't classify, output a question mark
-                if (res.getLabel() == null) {
-                    text = "Status: "+ ": ?\n";
-                } else {
-                    //else output its name
-                    text = String.format("%s: %s, %f\n", "Status: ", res.getLabel(),
-                            res.getConf());
-                }}
-
-            catch (Exception  e){
-                System.out.print("Exception:"+e.toString());
-
-            }
-
-            //this.faceImageView.setImageBitmap(grayImage);
-            emotionTextView.setText(text);
-            detectButton.setEnabled(false);
-            showProgress.hide();
         }
     }
 
@@ -375,8 +283,6 @@ public class MainActivity extends AppCompatActivity {
             normalized_pixels[i] = (float)(b);
 
         }
-        System.out.println(normalized_pixels);
-        Log.d("pixel_values",String.valueOf(normalized_pixels));
         String text=null;
 
         try{
@@ -430,5 +336,141 @@ public class MainActivity extends AppCompatActivity {
         this.faceImageView.setImageResource(R.drawable.ic_launcher_background);
         this.emotionTextView.setText("Mood ?");
 
+    }
+    private class AsyncFaceDetectionNEmotionRecognizition extends AsyncTask<Bitmap,String,Bitmap>
+    {
+
+        @Override
+        protected void onPreExecute()
+        {
+            super.onPreExecute();
+            showProgress = new ProgressDialog(MainActivity.this);
+            showProgress.setTitle("Wait!!");
+            showProgress.setMessage("FaceDetection is in progress!!");
+            showProgress.setCancelable(true);
+            showProgress.setIndeterminate(true);
+            showProgress.show();
+        }
+
+        @Override
+        protected Bitmap doInBackground(Bitmap... bitmaps) {
+            SparseArray<Face> faces=null;
+            com.google.android.gms.vision.face.FaceDetector faceDetector = new com.google.android.gms.vision.face.FaceDetector.Builder(MainActivity.this)
+                    .setTrackingEnabled(true)
+                    .setLandmarkType(com.google.android.gms.vision.face.FaceDetector.ALL_LANDMARKS)
+                    .setMode(FaceDetector.ACCURATE_MODE)
+                    .build();
+            if(!faceDetector.isOperational())
+            {
+                Toast.makeText(MainActivity.this,"FaceDetector is not working",Toast.LENGTH_SHORT).show();
+            }
+            else
+            {
+                Frame frame = new Frame.Builder().setBitmap(imageBitmap).build();
+                faces = faceDetector.detect(frame);
+                faceDetector.release();
+            }
+            if(faces == null)
+            {
+                Toast.makeText(MainActivity.this,"No face found",Toast.LENGTH_SHORT).show();
+                return null;
+            }
+            Face detectedFace = faces.valueAt(0);
+            return Bitmap.createBitmap(imageBitmap,
+                    (int)detectedFace.getPosition().x,
+                    (int)detectedFace.getPosition().y,
+                    (int)detectedFace.getWidth(),
+                    (int)detectedFace.getHeight()
+            );
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap)
+        {
+            super.onPostExecute(bitmap);
+            faceImageView.setImageBitmap(bitmap);
+            Bitmap image=((BitmapDrawable)faceImageView.getDrawable()).getBitmap();
+            Bitmap grayImage = toGrayscale(image);
+            Bitmap resizedImage = getResizedBitmap(grayImage,48,48);
+            int[] pixelarray;
+
+            //Initialize the intArray with the same size as the number of pixels on the image
+            pixelarray = new int[resizedImage.getWidth()*resizedImage.getHeight()];
+
+            //copy pixel data from the Bitmap into the 'intArray' array
+            resizedImage.getPixels(pixelarray, 0, resizedImage.getWidth(), 0, 0, resizedImage.getWidth(), resizedImage.getHeight());
+
+
+            float[] normalized_pixels  = new float[pixelarray.length];
+            for (int i=0; i < pixelarray.length; i++) {
+                // 0 for white and 255 for black
+                int pix = pixelarray[i];
+                int b = pix & 0xff;
+                //  normalized_pixels[i] = (float)((0xff - b)/255.0);
+                // normalized_pixels[i] = (float)(b/255.0);
+                normalized_pixels[i] = (float)(b);
+
+            }
+            //System.out.println(normalized_pixels);
+            //Log.d("pixel_values",String.valueOf(normalized_pixels));
+            String text=null;
+            String label=null;
+            try{
+                final Classification res = classifier.recognize(normalized_pixels);
+                label = res.getLabel();
+                //if it can't classify, output a question mark
+                if (res.getLabel() == null) {
+                    text = "Mood "+ ": ?\n";
+                } else {
+                    //else output its name
+                    text = String.format("%s: %s, %f\n", "Status: ", res.getLabel(),
+                            res.getConf());
+                }}
+
+            catch (Exception  e){
+                System.out.print("Exception:"+e.toString());
+
+            }
+
+            //this.faceImageView.setImageBitmap(grayImage);
+            emotionTextView.setText(text);
+            detectButton.setEnabled(false);
+            showProgress.hide();
+            if(label.equals("Angry")||label.equals("Disgust")||label.equals("Fear"))
+                label = "Angry";
+            else if(label.equals("Surprise")||label.equals("Neutral"))
+                label = "happy";
+            createPlaylist(label);
+        }
+    }
+
+    private void createPlaylist(String mood)
+    {
+        final FirebaseDatabase songDatabase = FirebaseDatabase.getInstance();
+        DatabaseReference songRef = songDatabase.getReference("song");
+        final ArrayList songList = new ArrayList<SongData>();
+        Log.d("Song",mood);
+        songRef.orderByChild("mood_info").equalTo(mood).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                if(dataSnapshot.exists())
+                {
+
+                    for(DataSnapshot child:dataSnapshot.getChildren())
+                    {
+                        SongData songData = child.getValue(SongData.class);
+                        songList.add(songData);
+                    }
+                    Log.d("Song",songList.get(0).toString());
+                }
+                //Log.d("Song",dataSnapshot.getValue().toString());
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Toast.makeText(getApplicationContext(),"Error happened"+databaseError.getMessage(),Toast.LENGTH_LONG).show();
+            }
+        });
     }
 }
