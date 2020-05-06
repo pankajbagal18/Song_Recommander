@@ -61,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView emotionTextView;
     private Button fbAnalysisButton;
     private SquareImageView faceImageView;
+    private Button generatePlaylistButton;
     TensorFlowClassifier classifier;
     ProgressDialog showProgress;
     static final int REQUEST_TAKE_PHOTO = 1;
@@ -69,6 +70,8 @@ public class MainActivity extends AppCompatActivity {
     String imageFileName;
     String timeStamp;
     Bitmap imageBitmap;
+    ArrayList songList = new ArrayList<SongData>();
+    String label=null;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -95,6 +98,19 @@ public class MainActivity extends AppCompatActivity {
                 new AsyncFaceDetectionNEmotionRecognizition().execute(imageBitmap);
             }
         });
+        generatePlaylistButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(label==null)
+                    Toast.makeText(getApplicationContext(),"Mood not available",Toast.LENGTH_SHORT).show();
+                else
+                {
+                    Intent showPlaylistIntent = new Intent(getApplicationContext(),ShowPlaylist.class);
+                    showPlaylistIntent.putExtra("MOOD_INFO",label);
+                    startActivity(showPlaylistIntent);
+                }
+            }
+        });
         clearButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -116,6 +132,7 @@ public class MainActivity extends AppCompatActivity {
         emotionTextView = (TextView)findViewById(R.id.emotionTextView);
         photoButton = (Button)findViewById(R.id.photoButton);
         fbAnalysisButton = (Button)findViewById(R.id.fbAnalysisButton);
+        generatePlaylistButton = (Button)findViewById(R.id.generatePlaylistButton);
     }
 
     private void checkAuthentication()
@@ -414,7 +431,6 @@ public class MainActivity extends AppCompatActivity {
             //System.out.println(normalized_pixels);
             //Log.d("pixel_values",String.valueOf(normalized_pixels));
             String text=null;
-            String label=null;
             try{
                 final Classification res = classifier.recognize(normalized_pixels);
                 label = res.getLabel();
@@ -440,37 +456,6 @@ public class MainActivity extends AppCompatActivity {
                 label = "Angry";
             else if(label.equals("Surprise")||label.equals("Neutral"))
                 label = "happy";
-            createPlaylist(label);
         }
-    }
-
-    private void createPlaylist(String mood)
-    {
-        final FirebaseDatabase songDatabase = FirebaseDatabase.getInstance();
-        DatabaseReference songRef = songDatabase.getReference("song");
-        final ArrayList songList = new ArrayList<SongData>();
-        Log.d("Song",mood);
-        songRef.orderByChild("mood_info").equalTo(mood).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-                if(dataSnapshot.exists())
-                {
-
-                    for(DataSnapshot child:dataSnapshot.getChildren())
-                    {
-                        SongData songData = child.getValue(SongData.class);
-                        songList.add(songData);
-                    }
-                    Log.d("Song",songList.get(0).toString());
-                }
-                //Log.d("Song",dataSnapshot.getValue().toString());
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                Toast.makeText(getApplicationContext(),"Error happened"+databaseError.getMessage(),Toast.LENGTH_LONG).show();
-            }
-        });
     }
 }

@@ -61,6 +61,12 @@
         />
     </LinearLayout>
     <Button
+        android:id="@+id/generatePlaylistButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Generate Playlist"
+        />
+    <Button
         android:id="@+id/fbAnalysisButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
